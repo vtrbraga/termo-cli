@@ -1,10 +1,12 @@
 from colorama import Fore, Back, Style
 from unidecode import unidecode
+import os
 import random
 import json
 
 class Termo():
     def __init__(self, validas, respostas, max_tentativas):
+        self.modo_colorido_cmd()
         self.validas = {unidecode(p).lower(): p.lower() for p in validas}
         self.respostas = {unidecode(p).lower(): p.lower() for p in respostas}
         self.max_tentativas = max_tentativas
@@ -14,24 +16,25 @@ class Termo():
         print("<tente adivinhar a palavra ou digite SAIR para encerrar o jogo>\n")
 
     @staticmethod
-    def ganhar(gabarito):
-        if gabarito=='aaaaa':
-            return True
-        else:
-            return False
+    def modo_colorido_cmd():
+        if os.name == 'nt':
+            from ctypes import windll
+            k = windll.kernel32
+            k.SetConsoleMode(k.GetStdHandle(-11), 7)
 
     def print_palavra(self, palavra, gabarito):
         palavra_print = self.validas[palavra].upper()
         mapa_cores = {
-            'x': Fore.RED,
+            'x': Fore.RESET,
             'p': Fore.YELLOW,
-            'a': Fore.CYAN
+            'a': Fore.GREEN
         }
-        print(Style.BRIGHT, end='')
-        if gabarito=='aaaaa':
-            print(Back.GREEN, end='')
         for p,g in zip(palavra_print, gabarito):
-            print(mapa_cores[g] + p, end=' ')
+            if gabarito=='aaaaa':
+                cor=Fore.CYAN
+            else:
+                cor=mapa_cores[g]
+            print(cor + p, end=' ')
         print(Style.RESET_ALL)
 
     def print_game(self):
@@ -95,8 +98,7 @@ class Termo():
                 break
             g=self.avaliar_tentativa(p, resposta)
             self.print_game()
-            ganhar=self.ganhar(g)
-            if ganhar:
+            if g=='aaaaa':
                 print(f"Você acertou em {t} tentativas!")
                 break
             if t==self.max_tentativas:
