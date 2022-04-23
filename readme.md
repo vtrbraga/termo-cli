@@ -3,7 +3,6 @@
 ## Dependências
 - Python 3.6+
 - bibliotecas nativas (unidecode, colorama, json, random)
-- _(apenas windows)_ biblioteca nativa ctypes
 
 ## Uso
 Navegue até o arquivo em um prompt de comando qualquer e execute com o interpretador Python do seu ambiente:

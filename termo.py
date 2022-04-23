@@ -1,4 +1,4 @@
-from colorama import Fore, Back, Style
+from colorama import Fore, Back, Style, init
 from unidecode import unidecode
 import os
 import random
@@ -6,21 +6,17 @@ import json
 
 class Termo():
     def __init__(self, validas, respostas, max_tentativas):
-        self.modo_colorido_cmd()
+        init()
         self.validas = {unidecode(p).lower(): p.lower() for p in validas}
         self.respostas = {unidecode(p).lower(): p.lower() for p in respostas}
         self.max_tentativas = max_tentativas
         self.tentativas = []
         self.gabaritos = []
+        self.letras_certas = set()
+        self.letras_proximas = set()
+        self.letras_descartadas = set()
         print("JOGO DE PALAVRAS - 5 LETRAS")
-        print("<tente adivinhar a palavra ou digite SAIR para encerrar o jogo>\n")
-
-    @staticmethod
-    def modo_colorido_cmd():
-        if os.name == 'nt':
-            from ctypes import windll
-            k = windll.kernel32
-            k.SetConsoleMode(k.GetStdHandle(-11), 7)
+        print("<tente adivinhar a palavra ou digite SAIR para encerrar o jogo>")
 
     def print_palavra(self, palavra, gabarito):
         palavra_print = self.validas[palavra].upper()
@@ -37,8 +33,24 @@ class Termo():
             print(cor + p, end=' ')
         print(Style.RESET_ALL)
 
+    def print_alfabeto(self):
+        alfabeto=['qwertyuiop','asdfghjkl','zxcvbnm']
+        for s in alfabeto:
+            for l in s:
+                if l in self.letras_certas:
+                    cor = Fore.GREEN
+                elif l in self.letras_proximas:
+                    cor = Fore.YELLOW
+                elif l in self.letras_descartadas:
+                    cor = Fore.RED
+                else:
+                    cor = Fore.RESET
+                print(cor + l.upper(), end=' ')
+            print(Style.RESET_ALL)
+
     def print_game(self):
         i=0
+        print("")
         for t,g in zip(self.tentativas,self.gabaritos):
             self.print_palavra(t,g)
             i+=1
@@ -61,19 +73,23 @@ class Termo():
         for t,r,g in zip(tentativa, resposta, gab_1_pass):
             if g == 'a':
                 gabarito += 'a'
+                self.letras_certas.add(t)
             elif t in letras_resposta:
                 letras_resposta.remove(t)
                 gabarito += 'p'
+                self.letras_proximas.add(t)
             else:
                 gabarito += 'x'
+                self.letras_descartadas.add(t)
         self.gabaritos.append(gabarito)
 
         return gabarito
 
     def obter_palavra(self, num_tentativa):
         obter=True
+        self.print_alfabeto()
         while obter:
-            print(f"Tentativa #{num_tentativa}: ", end='')
+            print(f"\nTentativa #{num_tentativa}: ", end='')
             palavra = unidecode(str(input())).lower()
             if palavra == 'sair':
                 return None
@@ -91,18 +107,21 @@ class Termo():
 
     def jogar(self):
         resposta = random.choice(list(self.respostas.keys()))
-        for t in range(1,self.max_tentativas+1):
-            p=self.obter_palavra(t)
-            if p is None:
-                print("Jogo Encerrado.")
-                break
-            g=self.avaliar_tentativa(p, resposta)
+        for t in range(1,self.max_tentativas+2):
             self.print_game()
-            if g=='aaaaa':
-                print(f"Você acertou em {t} tentativas!")
-                break
-            if t==self.max_tentativas:
+            if t>self.max_tentativas:
                 print(f"Não foi dessa vez, a palavra era: {self.respostas[resposta].upper()}")
+            else:
+                p=self.obter_palavra(t)
+                if p is None:
+                    print("Jogo Encerrado.")
+                    break
+                g=self.avaliar_tentativa(p, resposta)
+                if g=='aaaaa':
+                    self.print_game()
+                    print(f"Você acertou em {t} tentativas!")
+                    break
+            
 
 if __name__ == '__main__':
     with open('palavras.json', encoding='utf-8', mode='r') as f:
